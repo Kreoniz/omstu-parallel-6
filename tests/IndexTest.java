@@ -58,6 +58,34 @@ public class IndexTest {
             check(resolved.get("test.Parent.Nested").equals(Set.of("test.Container.Member")), "Унаследованный вложенный тип");
             check(warnings.isEmpty(), "Неожиданное неразрешённое имя");
 
+            Files.writeString(valid, "package test; import external.Base; class Imported extends Base {}");
+            var external = new InheritanceIndex();
+            external.add(JavaSourceParser.parse(valid));
+            check(external.resolve(warnings::add).get("external.Base").equals(Set.of("test.Imported")),
+                "Явный импорт должен работать без сборки зависимости");
+
+            Files.writeString(valid, "package test; class Child extends Missing {}");
+            var unknown = new InheritanceIndex();
+            unknown.add(JavaSourceParser.parse(valid));
+            check(unknown.resolve(warnings::add).get("[unresolved test.Child::Missing]").equals(Set.of("test.Child")),
+                "Неизвестная ссылка должна остаться в индексе с явной отметкой");
+            check(warnings.size() == 1, "Неизвестная ссылка должна вызвать предупреждение");
+            warnings.clear();
+
+            Path firstBase = Files.createDirectories(temporary.resolve("a")).resolve("Base.java");
+            Path secondBase = Files.createDirectories(temporary.resolve("b")).resolve("Base.java");
+            Files.writeString(firstBase, "package a; public class Base {}");
+            Files.writeString(secondBase, "package b; public class Base {}");
+            Files.writeString(valid, "package test; import a.*; import b.*; class Child extends Base {}");
+            var ambiguous = new InheritanceIndex();
+            ambiguous.add(JavaSourceParser.parse(firstBase));
+            ambiguous.add(JavaSourceParser.parse(secondBase));
+            ambiguous.add(JavaSourceParser.parse(valid));
+            check(ambiguous.resolve(warnings::add).get("[unresolved test.Child::Base]").equals(Set.of("test.Child")),
+                "Неоднозначные импорты не должны создавать ложную связь");
+            check(warnings.size() == 1 && warnings.getFirst().contains("a.Base") && warnings.getFirst().contains("b.Base"),
+                "Диагностика должна показывать оба кандидата");
+
             Files.writeString(valid, "class Broken extends {");
             try {
                 JavaSourceParser.parse(valid);
