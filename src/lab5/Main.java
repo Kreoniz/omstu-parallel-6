@@ -26,7 +26,6 @@ public class Main {
             for (Path file : files) {
                 futures.add(executor.submit(() -> JavaSourceParser.parse(file)));
             }
-            // Все задания уже выданы. Только теперь начинаем получать результаты.
             try {
                 for (Future<ParsedSource> future : futures) {
                     index.add(future.get());

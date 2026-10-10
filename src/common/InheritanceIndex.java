@@ -17,11 +17,8 @@ public final class InheritanceIndex {
         });
     }
 
-    // Разрешение имён происходит после чтения всех файлов: порядок потоков не влияет на результат.
     public Map<String, Set<String>> resolve(Consumer<String> warning) {
         Map<ParsedSource.Parent, String> names = new HashMap<>();
-        // Сначала находятся обычные родители. Затем их связи помогают найти
-        // унаследованные вложенные типы. Повторяем до стабилизации результата.
         for (int step = 0; step <= declarations.size(); step++) {
             Map<String, Set<String>> ancestors = ancestors(names);
             Map<ParsedSource.Parent, String> next = new HashMap<>();
@@ -130,7 +127,6 @@ public final class InheritanceIndex {
         if (candidates.size() > 1) {
             return unresolved(parent, warning, candidates);
         }
-        // Явное полное имя можно сохранить даже без установленной внешней зависимости.
         if (name.contains(".") && Character.isLowerCase(name.charAt(0))) {
             return name;
         }

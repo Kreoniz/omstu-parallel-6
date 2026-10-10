@@ -28,7 +28,6 @@ public class Main {
                     var source = JavaSourceParser.parse(file);
                     lock.lock();
                     try {
-                        // Любое изменение общего Map выполняется под одним и тем же lock.
                         index.add(source);
                     } finally {
                         lock.unlock();

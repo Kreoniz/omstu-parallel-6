@@ -15,7 +15,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class Main {
     private record Job(Path file) {}
     private record Result(ParsedSource source, Exception failure) {}
-    // Специальное задание завершения; для него путь не нужен.
     private static final Job POISON_PILL = new Job(null);
 
     private static void work(BlockingQueue<Job> jobs, BlockingQueue<Result> results) {
@@ -29,7 +28,6 @@ public class Main {
                 try {
                     result = new Result(JavaSourceParser.parse(job.file()), null);
                 } catch (Exception exception) {
-                    // Ошибка тоже является результатом: главный поток не зависнет в ожидании.
                     result = new Result(null, exception);
                 }
                 results.put(result);
@@ -46,8 +44,6 @@ public class Main {
         int workers = WorkerCount.fromArguments(args);
         var files = SourceFiles.find(Path.of(args.length == 0 ? "examples/project" : args[0]));
         BlockingQueue<Job> jobs = new ArrayBlockingQueue<>(workers);
-        // Главный поток сначала выдаёт все задания. Неограниченная очередь результатов
-        // позволяет исполнителям продолжать работу, пока он ещё занят выдачей.
         BlockingQueue<Result> results = new LinkedBlockingQueue<>();
         List<Thread> threads = new ArrayList<>();
         var index = new InheritanceIndex();
@@ -64,7 +60,6 @@ public class Main {
             for (int i = 0; i < workers; i++) {
                 jobs.put(POISON_PILL);
             }
-            // Reduce: главный поток собирает ровно один результат на каждый файл.
             for (int i = 0; i < files.size(); i++) {
                 Result result = results.take();
                 if (result.failure() != null) {

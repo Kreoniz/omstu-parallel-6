@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 public class Main {
-    // У каждого задания свой результат. Рабочие потоки не меняют общий индекс.
     private static class FileTask implements Runnable {
         private final Path file;
         private final CountDownLatch completion;
@@ -45,7 +44,6 @@ public class Main {
         for (Path file : files) {
             var task = new FileTask(file, completion);
             tasks.add(task);
-            // Отдельный Thread на каждый файл; виртуальные потоки подходят для тысяч файлов.
             threads.add(Thread.ofVirtual().name("parse-" + file.getFileName()).start(task));
         }
         try {

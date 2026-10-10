@@ -23,7 +23,6 @@ public final class JavaSourceParser {
         Set<String> declarations = new HashSet<>();
         Map<ParsedSource.Parent, Set<String>> children = new HashMap<>();
 
-        // FileManager и JavacTask принадлежат только этому вызову: их не делят потоки.
         try (var manager = compiler.getStandardFileManager(diagnostics, Locale.ROOT, StandardCharsets.UTF_8)) {
             var source = manager.getJavaFileObjects(file.toFile());
             var task = (JavacTask) compiler.getTask(null, manager, diagnostics, List.of("-proc:none"), null, source);
@@ -42,7 +41,6 @@ public final class JavaSourceParser {
                     public Void visitClass(ClassTree type, Void unused) {
                         String simpleName = type.getSimpleName().toString();
                         if (simpleName.isEmpty()) {
-                            // Анонимный класс не имеет имени для индекса; продолжаем обход.
                             String scope = (scopes.isEmpty() ? packageName : scopes.peek())
                                 + ".$anonymous" + positions.getStartPosition(type);
                             scopes.push(scope);
@@ -54,7 +52,6 @@ public final class JavaSourceParser {
                         }
                         Tree owner = getCurrentPath().getParentPath().getLeaf();
                         if (!(owner instanceof CompilationUnitTree) && !(owner instanceof ClassTree)) {
-                            // Одноимённые локальные классы различаются позицией в исходнике.
                             simpleName += "$local" + positions.getStartPosition(type);
                         }
                         String prefix = scopes.isEmpty() ? packageName : scopes.peek();
@@ -66,7 +63,6 @@ public final class JavaSourceParser {
                             if (type.getExtendsClause() != null) {
                                 parents.add(type.getExtendsClause());
                             }
-                            // Здесь javac хранит и extends интерфейсов, и implements классов.
                             parents.addAll(type.getImplementsClause());
                             for (Tree parentType : parents) {
                                 var parent = new ParsedSource.Parent(typeName(parentType), packageName,
