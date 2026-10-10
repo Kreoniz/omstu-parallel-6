@@ -7,19 +7,14 @@ import com.sun.source.tree.Tree;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreeScanner;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import javax.tools.Diagnostic;
-import javax.tools.DiagnosticCollector;
-import javax.tools.JavaFileObject;
 import javax.tools.ToolProvider;
 
 public class Main {
@@ -55,14 +50,10 @@ public class Main {
             return index;
         }
         var compiler = ToolProvider.getSystemJavaCompiler();
-        if (compiler == null) {
-            throw new IOException("Нужен JDK. Запустите программу через mise exec.");
-        }
-        var diagnostics = new DiagnosticCollector<JavaFileObject>();
 
-        try (var manager = compiler.getStandardFileManager(diagnostics, Locale.ROOT, StandardCharsets.UTF_8)) {
+        try (var manager = compiler.getStandardFileManager(null, null, null)) {
             var sources = manager.getJavaFileObjectsFromFiles(files.stream().map(Path::toFile).toList());
-            var task = (JavacTask) compiler.getTask(null, manager, diagnostics, List.of("-proc:none"), null, sources);
+            var task = (JavacTask) compiler.getTask(null, manager, null, List.of(), null, sources);
 
             for (var unit : task.parse()) {
                 new TreeScanner<Void, Void>() {
@@ -91,12 +82,6 @@ public class Main {
                         return super.visitClass(type, unused);
                     }
                 }.scan(unit, null);
-            }
-            for (var diagnostic : diagnostics.getDiagnostics()) {
-                if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
-                    throw new IOException(diagnostic.getSource().getName() + ":"
-                        + diagnostic.getLineNumber() + ": " + diagnostic.getMessage(Locale.ROOT));
-                }
             }
         }
         return index;

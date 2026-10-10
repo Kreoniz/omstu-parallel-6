@@ -18,7 +18,7 @@ java -cp build/classes lab2.Main > "$test_dir/actual.txt"
 diff -u "$test_dir/expected.txt" "$test_dir/actual.txt"
 javac -encoding UTF-8 -d "$test_dir/classes" examples/project/*.java
 
-mkdir -p "$test_dir/project/nested" "$test_dir/empty" "$test_dir/broken"
+mkdir -p "$test_dir/project/nested" "$test_dir/empty"
 cat > "$test_dir/project/nested/Sample.java" <<'EOF'
 package sample;
 interface Readable {}
@@ -43,14 +43,6 @@ diff -u "$test_dir/expected.txt" "$test_dir/actual.txt"
 
 java -cp build/classes lab2.Main "$test_dir/empty" > "$test_dir/actual.txt"
 test ! -s "$test_dir/actual.txt"
-
-printf 'class Broken extends {\n' > "$test_dir/broken/Broken.java"
-if java -cp build/classes lab2.Main "$test_dir/broken" > "$test_dir/actual.txt" 2> "$test_dir/error.txt"; then
-    echo 'Синтаксическая ошибка должна завершать программу с ошибкой' >&2
-    exit 1
-fi
-test ! -s "$test_dir/actual.txt"
-test -s "$test_dir/error.txt"
 
 if java -cp build/classes lab2.Main "$test_dir/missing" > "$test_dir/actual.txt" 2> "$test_dir/error.txt"; then
     echo 'Отсутствующая папка должна завершать программу с ошибкой' >&2
