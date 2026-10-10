@@ -20,10 +20,12 @@ mise exec -- ./run.sh
 mise exec -- ./run.sh /путь/к/Java-проекту
 ```
 
+Можно указать номер лабораторной: `mise exec -- ./run.sh 2` запускает анализ Spring, а `mise exec -- ./run.sh 2 /путь/к/Java-проекту` — анализ указанной папки.
+
 ## Запуск на Spring Framework
 
 ```sh
-mise exec -- ./run-spring.sh
+mise exec -- ./run.sh 2
 ```
 
 Скрипт скачивает [Spring Framework v7.0.9](https://github.com/spring-projects/spring-framework/tree/v7.0.9) в `build/spring-framework` и выводит индекс всех `.java`-файлов репозитория, включая тестовые исходники. При повторном запуске используется уже скачанная папка. Собирать Spring и устанавливать его зависимости не нужно.
@@ -34,7 +36,7 @@ mise exec -- ./run-spring.sh
 
 ```sh
 mkdir -p build
-mise exec -- ./run-spring.sh > build/spring-inheritance.txt
+mise exec -- ./run.sh 2 > build/spring-inheritance.txt
 ```
 
 ## Как работает программа
