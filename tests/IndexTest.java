@@ -35,6 +35,7 @@ public class IndexTest {
             Files.writeString(valid, """
                 package test;
                 import java.util.*;
+                @java.lang.annotation.Target(java.lang.annotation.ElementType.TYPE_USE)
                 @interface Mark {}
                 class Base<T> {}
                 class Child extends @Mark Base<String> implements java.io.Serializable {}
@@ -43,6 +44,9 @@ public class IndexTest {
                     void first() { class Local extends Base<String> {} }
                     void second() { class Local extends Base<String> {} }
                 }
+                class Parent { static class Nested {} }
+                class Middle extends Parent {}
+                class Container extends Middle { static class Member extends Nested {} }
                 """);
             var extra = new InheritanceIndex();
             extra.add(JavaSourceParser.parse(valid));
@@ -51,6 +55,7 @@ public class IndexTest {
             check(resolved.get("java.io.Serializable").equals(Set.of("test.Child")), "Полное имя родителя");
             check(resolved.get("java.lang.Runnable").equals(Set.of("test.Copy")), "Родитель из java.lang");
             check(resolved.get("java.util.List").equals(Set.of("test.Copy")), "Импорт с wildcard");
+            check(resolved.get("test.Parent.Nested").equals(Set.of("test.Container.Member")), "Унаследованный вложенный тип");
             check(warnings.isEmpty(), "Неожиданное неразрешённое имя");
 
             Files.writeString(valid, "class Broken extends {");

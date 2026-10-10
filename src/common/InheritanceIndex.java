@@ -19,23 +19,79 @@ public final class InheritanceIndex {
 
     // Разрешение имён происходит после чтения всех файлов: порядок потоков не влияет на результат.
     public Map<String, Set<String>> resolve(Consumer<String> warning) {
+        Map<ParsedSource.Parent, String> names = new HashMap<>();
+        // Сначала находятся обычные родители. Затем их связи помогают найти
+        // унаследованные вложенные типы. Повторяем до стабилизации результата.
+        for (int step = 0; step <= declarations.size(); step++) {
+            Map<String, Set<String>> ancestors = ancestors(names);
+            Map<ParsedSource.Parent, String> next = new HashMap<>();
+            for (var parent : children.keySet()) {
+                next.put(parent, resolveName(parent, message -> {}, ancestors));
+            }
+            if (next.equals(names)) {
+                names = next;
+                break;
+            }
+            names = next;
+        }
+        Map<String, Set<String>> ancestors = ancestors(names);
         Map<String, Set<String>> result = new TreeMap<>();
         declarations.forEach(name -> result.put(name, new TreeSet<>()));
         children.entrySet().stream().sorted(Comparator.comparing(entry -> entry.getKey().toString()))
             .forEach(entry -> {
-                String parent = resolveName(entry.getKey(), warning);
-                Set<String> names = result.getOrDefault(parent, new TreeSet<>());
-                names.addAll(entry.getValue());
-                result.put(parent, names);
+                String parent = resolveName(entry.getKey(), warning, ancestors);
+                if (parent == null) {
+                    parent = "[unresolved " + entry.getKey().scopes().getFirst() + "::" + entry.getKey().name() + "]";
+                }
+                Set<String> subclasses = result.getOrDefault(parent, new TreeSet<>());
+                subclasses.addAll(entry.getValue());
+                result.put(parent, subclasses);
             });
         return result;
     }
 
-    private String resolveName(ParsedSource.Parent parent, Consumer<String> warning) {
+    private Map<String, Set<String>> ancestors(Map<ParsedSource.Parent, String> names) {
+        Map<String, Set<String>> result = new HashMap<>();
+        children.forEach((reference, subclasses) -> {
+            String parent = names.get(reference);
+            if (parent != null) {
+                for (String subclass : subclasses) {
+                    result.computeIfAbsent(subclass, key -> new HashSet<>()).add(parent);
+                }
+            }
+        });
+        return result;
+    }
+
+    private void inheritedTypes(String scope, String name, Map<String, Set<String>> ancestors,
+                                Set<String> visited, Set<String> matches) {
+        if (!visited.add(scope)) {
+            return;
+        }
+        for (String parent : ancestors.getOrDefault(scope, Set.of())) {
+            String candidate = parent + "." + name;
+            if (declarations.contains(candidate)) {
+                matches.add(candidate);
+            } else {
+                inheritedTypes(parent, name, ancestors, visited, matches);
+            }
+        }
+    }
+
+    private String resolveName(ParsedSource.Parent parent, Consumer<String> warning,
+                               Map<String, Set<String>> ancestors) {
         String name = parent.name();
         for (String scope : parent.scopes()) {
             if (declarations.contains(scope + "." + name)) {
                 return scope + "." + name;
+            }
+            Set<String> inherited = new TreeSet<>();
+            inheritedTypes(scope, name, ancestors, new HashSet<>(), inherited);
+            if (inherited.size() == 1) {
+                return inherited.iterator().next();
+            }
+            if (inherited.size() > 1) {
+                return unresolved(parent, warning, inherited);
             }
         }
         String head = name.contains(".") ? name.substring(0, name.indexOf('.')) : name;
@@ -103,7 +159,7 @@ public final class InheritanceIndex {
         String context = parent.scopes().getFirst();
         warning.accept("Не удалось однозначно разрешить " + parent.name() + " в " + context
             + (candidates.isEmpty() ? "" : "; кандидаты: " + candidates));
-        return "[unresolved " + context + "::" + parent.name() + "]";
+        return null;
     }
 
     public void print() {
