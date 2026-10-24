@@ -1,16 +1,18 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")"
-lab=${1:-2}
-case "$lab" in
-    2|3|4|5|6) classes=build/lab$lab ;;
+variant=${1:-2}
+lab=$variant
+case "$variant" in
+    2|3|4|5|6) classes=build/lab$lab; main_class=lab$lab.Main ;;
+    3-optimized) lab=3; classes=build/lab3-optimized; main_class=lab3.MainOptimized ;;
     *) echo 'Номер лабораторной должен быть от 2 до 6' >&2; exit 1 ;;
 esac
 test_dir=$(mktemp -d "build/lab$lab-test.XXXXXX")
 trap 'rm -rf "$test_dir"' EXIT HUP INT TERM
 
 run_lab() {
-    timeout 60s java -cp "$classes" "lab$lab.Main" "$@"
+    timeout 60s java -cp "$classes" "$main_class" "$@"
 }
 
 if [ "$lab" = 3 ]; then
@@ -47,9 +49,14 @@ EOF
 fi
 run_lab examples/project > "$test_dir/actual.txt"
 diff -u "$test_dir/expected.txt" "$test_dir/actual.txt"
-mise run "lab$lab" examples/project > "$test_dir/actual.txt"
+mise run "lab$variant" examples/project > "$test_dir/actual.txt"
 diff -u "$test_dir/expected.txt" "$test_dir/actual.txt"
 javac -encoding UTF-8 -d "$test_dir/classes" examples/project/*.java
+
+if [ "$lab" = 3 ]; then
+    run_lab --benchmark examples/project > "$test_dir/benchmark.txt"
+    awk 'NF == 3 && $1 == "files=6" && $2 ~ /^workers=[0-9]+$/ && $3 ~ /^index_ms=[0-9]+[.][0-9]+$/ {valid++} END {exit NR != 1 || valid != 1}' "$test_dir/benchmark.txt"
+fi
 
 mkdir -p "$test_dir/project/nested" "$test_dir/empty"
 cat > "$test_dir/project/nested/Sample.java" <<'EOF'
@@ -133,7 +140,7 @@ if [ "$lab" != 2 ]; then
     fi
     run_lab "$test_dir/many files" > "$test_dir/actual.txt"
     diff -u "$test_dir/expected.txt" "$test_dir/actual.txt"
-    if [ "$lab" = 5 ] || [ "$lab" = 6 ]; then
+    if [ "$lab" = 5 ] || [ "$lab" = 6 ] || [ "$variant" = 3-optimized ]; then
         for workers in 1 3; do
             run_lab "$test_dir/many files" "$workers" > "$test_dir/actual.txt"
             diff -u "$test_dir/expected.txt" "$test_dir/actual.txt"
@@ -154,4 +161,4 @@ if [ "$lab" != 2 ]; then
         test -s "$test_dir/error.txt"
     fi
 fi
-echo "Проверки лабораторной $lab пройдены"
+echo "Проверки лабораторной $variant пройдены"

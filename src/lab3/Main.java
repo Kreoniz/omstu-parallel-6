@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -26,13 +27,16 @@ public class Main {
     private record FileResult(Path file, Map<String, Set<String>> index, Exception failure) {}
 
     public static void main(String[] args) throws Exception {
-        if (args.length > 1) {
-            throw new IllegalArgumentException("Использование: lab3.Main [папка Java-проекта]");
+        boolean benchmark = args.length > 0 && args[0].equals("--benchmark");
+        int offset = benchmark ? 1 : 0;
+        if (args.length - offset > 1) {
+            throw new IllegalArgumentException("Использование: lab3.Main [--benchmark] [папка Java-проекта]");
         }
-        Path root = Path.of(args.length == 0 ? "build/spring-framework" : args[0]);
+        Path root = Path.of(args.length == offset ? "build/spring-framework" : args[offset]);
         List<Path> files = findJavaFiles(root);
         FileResult[] results = new FileResult[files.size()];
         CountDownLatch completed = new CountDownLatch(files.size());
+        long started = System.nanoTime();
 
         for (int i = 0; i < files.size(); i++) {
             int position = i;
@@ -48,6 +52,7 @@ public class Main {
             });
         }
         completed.await();
+        long elapsed = System.nanoTime() - started;
 
         for (FileResult result : results) {
             if (result == null || result.failure() != null) {
@@ -55,6 +60,11 @@ public class Main {
                     + (result == null ? "поток завершился без результата" : result.file()),
                     result == null ? null : result.failure());
             }
+        }
+        if (benchmark) {
+            System.out.printf(Locale.ROOT, "files=%d workers=%d index_ms=%.3f%n",
+                files.size(), files.size(), elapsed / 1_000_000.0);
+            return;
         }
         for (FileResult result : results) {
             System.out.println("FILE " + root.relativize(result.file()));
