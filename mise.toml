@@ -50,3 +50,22 @@ run = "java -cp build/lab3 lab3.Main"
 description = "Проверить лабораторную 3"
 depends = ["build:lab3"]
 run = "./test.sh 3"
+
+[tasks."build:lab4"]
+description = "Скомпилировать только лабораторную 4"
+run = """
+rm -rf build/lab4
+mkdir -p build/lab4
+javac -encoding UTF-8 -Xlint:all -d build/lab4 src/lab4/Main.java
+"""
+
+[tasks.lab4]
+description = "Лабораторная 4: общий индекс под ReentrantLock"
+depends = ["build:lab4"]
+raw = true
+run = "java -cp build/lab4 lab4.Main"
+
+[tasks."test:lab4"]
+description = "Проверить лабораторную 4"
+depends = ["build:lab4"]
+run = "./test.sh 4"
