@@ -88,3 +88,22 @@ run = "java -cp build/lab5 lab5.Main"
 description = "Проверить лабораторную 5"
 depends = ["build:lab5"]
 run = "./test.sh 5"
+
+[tasks."build:lab6"]
+description = "Скомпилировать только лабораторную 6"
+run = """
+rm -rf build/lab6
+mkdir -p build/lab6
+javac -encoding UTF-8 -Xlint:all -d build/lab6 src/lab6/Main.java
+"""
+
+[tasks.lab6]
+description = "Лабораторная 6: Map-Reduce через две BlockingQueue"
+depends = ["build:lab6"]
+raw = true
+run = "java -cp build/lab6 lab6.Main"
+
+[tasks."test:lab6"]
+description = "Проверить лабораторную 6"
+depends = ["build:lab6"]
+run = "./test.sh 6"
