@@ -3,12 +3,12 @@ java = "openjdk-27.0.0"
 
 [tasks.build]
 description = "Скомпилировать все лабораторные независимо"
-depends = ["build:lab2", "build:lab3", "build:lab4", "build:lab5", "build:lab6"]
+depends = ["build:lab2", "build:lab3", "build:lab3-optimized", "build:lab4", "build:lab5", "build:lab6"]
 
 [tasks.test]
 description = "Проверить лабораторные 2–6"
 depends = ["build"]
-run = ["./test.sh 2", "./test.sh 3", "./test.sh 4", "./test.sh 5", "./test.sh 6"]
+run = ["./test.sh 2", "./test.sh 3", "./test.sh 3-optimized", "./test.sh 4", "./test.sh 5", "./test.sh 6"]
 
 [tasks.spring]
 description = "Запустить выбранную лабораторную на Spring: spring [2–6] [потоки]"
@@ -71,8 +71,10 @@ raw = true
 run = '''
 #!/bin/sh
 set -eu
-if [ "$#" -eq 0 ] && [ ! -d build/spring-framework ]; then
-    git clone --depth 1 --branch v7.0.9 https://github.com/spring-projects/spring-framework.git build/spring-framework
+if [ "$#" -eq 0 ] || { [ "$#" -eq 1 ] && [ "$1" = --benchmark ]; }; then
+    if [ ! -d build/spring-framework ]; then
+        git clone --depth 1 --branch v7.0.9 https://github.com/spring-projects/spring-framework.git build/spring-framework
+    fi
 fi
 exec java -cp build/lab3 lab3.Main "$@"
 '''
@@ -81,6 +83,59 @@ exec java -cp build/lab3 lab3.Main "$@"
 description = "Проверить лабораторную 3"
 depends = ["build:lab3"]
 run = "./test.sh 3"
+
+[tasks."build:lab3-optimized"]
+description = "Скомпилировать независимый пакетный вариант лабораторной 3"
+run = """
+rm -rf build/lab3-optimized
+mkdir -p build/lab3-optimized
+javac -encoding UTF-8 -Xlint:all -d build/lab3-optimized src/lab3/Main-optimized.java
+"""
+
+[tasks.lab3-optimized]
+description = "Пакетный разбор Spring: [--benchmark] [папка] [потоки]"
+depends = ["build:lab3-optimized"]
+raw = true
+run = '''
+#!/bin/sh
+set -eu
+if [ "$#" -eq 0 ] || { [ "$#" -eq 1 ] && [ "$1" = --benchmark ]; }; then
+    if [ ! -d build/spring-framework ]; then
+        git clone --depth 1 --branch v7.0.9 https://github.com/spring-projects/spring-framework.git build/spring-framework
+    fi
+fi
+exec java -cp build/lab3-optimized lab3.MainOptimized "$@"
+'''
+
+[tasks."test:lab3-optimized"]
+description = "Проверить пакетный вариант лабораторной 3"
+depends = ["build:lab3-optimized"]
+run = "./test.sh 3-optimized"
+
+[tasks."bench:lab3"]
+description = "Три сравнения построения индекса: [папка] [потоки оптимизированного варианта]"
+depends = ["build:lab3", "build:lab3-optimized"]
+raw = true
+run = '''
+#!/bin/sh
+set -eu
+if [ "$#" -gt 2 ]; then
+    echo 'Использование: bench:lab3 [папка Java-проекта] [число потоков]' >&2
+    exit 1
+fi
+if [ "$#" -eq 0 ]; then
+    if [ ! -d build/spring-framework ]; then
+        git clone --depth 1 --branch v7.0.9 https://github.com/spring-projects/spring-framework.git build/spring-framework
+    fi
+    set -- build/spring-framework
+fi
+for attempt in 1 2 3; do
+    printf 'original '
+    java -cp build/lab3 lab3.Main --benchmark "$1"
+    printf 'optimized '
+    java -cp build/lab3-optimized lab3.MainOptimized --benchmark "$@"
+done
+'''
 
 [tasks."build:lab4"]
 description = "Скомпилировать только лабораторную 4"
