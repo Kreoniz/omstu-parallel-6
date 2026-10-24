@@ -45,7 +45,11 @@ Readable -> Writable
 Writable -> Document
 EOF
 fi
-run_lab > "$test_dir/actual.txt"
+if [ "$lab" = 2 ]; then
+    run_lab examples/project > "$test_dir/actual.txt"
+else
+    run_lab > "$test_dir/actual.txt"
+fi
 diff -u "$test_dir/expected.txt" "$test_dir/actual.txt"
 mise run "lab$lab" examples/project > "$test_dir/actual.txt"
 diff -u "$test_dir/expected.txt" "$test_dir/actual.txt"

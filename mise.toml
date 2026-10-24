@@ -38,11 +38,18 @@ javac -encoding UTF-8 -Xlint:all -d build/lab2 src/lab2/Main.java
 """
 
 [tasks.lab2]
-description = "Последовательный обратный индекс"
+description = "Последовательный обратный индекс Spring или указанной папки"
 alias = "default"
 depends = ["build:lab2"]
 raw = true
-run = "java -cp build/lab2 lab2.Main"
+run = '''
+#!/bin/sh
+set -eu
+if [ "$#" -eq 0 ] && [ ! -d build/spring-framework ]; then
+    git clone --depth 1 --branch v7.0.9 https://github.com/spring-projects/spring-framework.git build/spring-framework
+fi
+exec java -cp build/lab2 lab2.Main "$@"
+'''
 
 [tasks."test:lab2"]
 description = "Проверить лабораторную 2"
