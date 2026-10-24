@@ -1,7 +1,6 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")"
-./build.sh
 test_dir=$(mktemp -d build/lab2-test.XXXXXX)
 trap 'rm -rf "$test_dir"' EXIT HUP INT TERM
 
@@ -16,7 +15,7 @@ Writable -> Document
 EOF
 java -cp build/classes lab2.Main > "$test_dir/actual.txt"
 diff -u "$test_dir/expected.txt" "$test_dir/actual.txt"
-./run.sh 2 examples/project > "$test_dir/actual.txt"
+mise run lab2 examples/project > "$test_dir/actual.txt"
 diff -u "$test_dir/expected.txt" "$test_dir/actual.txt"
 javac -encoding UTF-8 -d "$test_dir/classes" examples/project/*.java
 

@@ -1,2 +1,33 @@
 [tools]
 java = "openjdk-27.0.0"
+
+[tasks.build]
+description = "Скомпилировать лабораторную 2"
+run = """
+rm -rf build/classes
+mkdir -p build/classes
+javac -encoding UTF-8 -Xlint:all -d build/classes src/lab2/Main.java
+"""
+
+[tasks.lab2]
+description = "Построить индекс примера или указанной папки"
+alias = "default"
+depends = ["build"]
+raw = true
+run = "java -cp build/classes lab2.Main"
+
+[tasks.spring]
+description = "Скачать Spring Framework и построить индекс его исходников"
+depends = ["build"]
+raw = true
+run = """
+if [ ! -d build/spring-framework ]; then
+    git clone --depth 1 --branch v7.0.9 https://github.com/spring-projects/spring-framework.git build/spring-framework
+fi
+java -cp build/classes lab2.Main build/spring-framework
+"""
+
+[tasks.test]
+description = "Проверить лабораторную 2"
+depends = ["build"]
+run = "./test.sh"
