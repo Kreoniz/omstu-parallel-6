@@ -31,3 +31,22 @@ java -cp build/classes lab2.Main build/spring-framework
 description = "Проверить лабораторную 2"
 depends = ["build"]
 run = "./test.sh"
+
+[tasks."build:lab3"]
+description = "Скомпилировать только лабораторную 3"
+run = """
+rm -rf build/lab3
+mkdir -p build/lab3
+javac -encoding UTF-8 -Xlint:all -d build/lab3 src/lab3/Main.java
+"""
+
+[tasks.lab3]
+description = "Лабораторная 3: отдельный поток и индекс на каждый файл"
+depends = ["build:lab3"]
+raw = true
+run = "java -cp build/lab3 lab3.Main"
+
+[tasks."test:lab3"]
+description = "Проверить лабораторную 3"
+depends = ["build:lab3"]
+run = "./test.sh 3"
