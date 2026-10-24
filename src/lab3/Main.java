@@ -29,7 +29,7 @@ public class Main {
         if (args.length > 1) {
             throw new IllegalArgumentException("Использование: lab3.Main [папка Java-проекта]");
         }
-        Path root = Path.of(args.length == 0 ? "examples/project" : args[0]);
+        Path root = Path.of(args.length == 0 ? "build/spring-framework" : args[0]);
         List<Path> files = findJavaFiles(root);
         FileResult[] results = new FileResult[files.size()];
         CountDownLatch completed = new CountDownLatch(files.size());
