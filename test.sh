@@ -3,8 +3,7 @@ set -eu
 cd "$(dirname "$0")"
 lab=${1:-2}
 case "$lab" in
-    2) classes=build/classes ;;
-    3|4|5|6) classes=build/lab$lab ;;
+    2|3|4|5|6) classes=build/lab$lab ;;
     *) echo 'Номер лабораторной должен быть от 2 до 6' >&2; exit 1 ;;
 esac
 test_dir=$(mktemp -d "build/lab$lab-test.XXXXXX")

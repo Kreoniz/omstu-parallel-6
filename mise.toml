@@ -2,35 +2,52 @@
 java = "openjdk-27.0.0"
 
 [tasks.build]
-description = "Скомпилировать лабораторную 2"
-run = """
-rm -rf build/classes
-mkdir -p build/classes
-javac -encoding UTF-8 -Xlint:all -d build/classes src/lab2/Main.java
-"""
+description = "Скомпилировать все лабораторные независимо"
+depends = ["build:lab2", "build:lab3", "build:lab4", "build:lab5", "build:lab6"]
 
-[tasks.lab2]
-description = "Построить индекс примера или указанной папки"
-alias = "default"
+[tasks.test]
+description = "Проверить лабораторные 2–6"
 depends = ["build"]
-raw = true
-run = "java -cp build/classes lab2.Main"
+run = ["./test.sh 2", "./test.sh 3", "./test.sh 4", "./test.sh 5", "./test.sh 6"]
 
 [tasks.spring]
-description = "Скачать Spring Framework и построить индекс его исходников"
-depends = ["build"]
+description = "Запустить выбранную лабораторную на Spring: spring [2–6] [потоки]"
 raw = true
-run = """
+run = '''
+#!/bin/sh
+set -eu
+lab=${1:-2}
+case "$lab" in
+    2|3|4|5|6) ;;
+    *) echo 'Номер лабораторной должен быть от 2 до 6' >&2; exit 1 ;;
+esac
+if [ "$#" -gt 0 ]; then shift; fi
+mkdir -p build
 if [ ! -d build/spring-framework ]; then
     git clone --depth 1 --branch v7.0.9 https://github.com/spring-projects/spring-framework.git build/spring-framework
 fi
-java -cp build/classes lab2.Main build/spring-framework
+exec mise run "lab$lab" build/spring-framework "$@"
+'''
+
+[tasks."build:lab2"]
+description = "Скомпилировать только лабораторную 2"
+run = """
+rm -rf build/lab2
+mkdir -p build/lab2
+javac -encoding UTF-8 -Xlint:all -d build/lab2 src/lab2/Main.java
 """
 
-[tasks.test]
+[tasks.lab2]
+description = "Последовательный обратный индекс"
+alias = "default"
+depends = ["build:lab2"]
+raw = true
+run = "java -cp build/lab2 lab2.Main"
+
+[tasks."test:lab2"]
 description = "Проверить лабораторную 2"
-depends = ["build"]
-run = "./test.sh"
+depends = ["build:lab2"]
+run = "./test.sh 2"
 
 [tasks."build:lab3"]
 description = "Скомпилировать только лабораторную 3"
@@ -41,7 +58,7 @@ javac -encoding UTF-8 -Xlint:all -d build/lab3 src/lab3/Main.java
 """
 
 [tasks.lab3]
-description = "Лабораторная 3: отдельный поток и индекс на каждый файл"
+description = "Отдельный поток и индекс на каждый файл"
 depends = ["build:lab3"]
 raw = true
 run = "java -cp build/lab3 lab3.Main"
@@ -60,7 +77,7 @@ javac -encoding UTF-8 -Xlint:all -d build/lab4 src/lab4/Main.java
 """
 
 [tasks.lab4]
-description = "Лабораторная 4: общий индекс под ReentrantLock"
+description = "Общий индекс под ReentrantLock"
 depends = ["build:lab4"]
 raw = true
 run = "java -cp build/lab4 lab4.Main"
@@ -79,7 +96,7 @@ javac -encoding UTF-8 -Xlint:all -d build/lab5 src/lab5/Main.java
 """
 
 [tasks.lab5]
-description = "Лабораторная 5: ExecutorService и список Future"
+description = "ExecutorService и список Future"
 depends = ["build:lab5"]
 raw = true
 run = "java -cp build/lab5 lab5.Main"
@@ -98,7 +115,7 @@ javac -encoding UTF-8 -Xlint:all -d build/lab6 src/lab6/Main.java
 """
 
 [tasks.lab6]
-description = "Лабораторная 6: Map-Reduce через две BlockingQueue"
+description = "Map-Reduce через две BlockingQueue"
 depends = ["build:lab6"]
 raw = true
 run = "java -cp build/lab6 lab6.Main"
