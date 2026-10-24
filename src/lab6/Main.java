@@ -32,7 +32,7 @@ public class Main {
         if (args.length > 2) {
             throw new IllegalArgumentException("Использование: lab6.Main [папка Java-проекта] [число потоков]");
         }
-        Path root = Path.of(args.length == 0 ? "examples/project" : args[0]);
+        Path root = Path.of(args.length == 0 ? "build/spring-framework" : args[0]);
         int workerCount = args.length < 2
             ? Math.min(4, Runtime.getRuntime().availableProcessors())
             : Integer.parseInt(args[1]);
