@@ -100,6 +100,7 @@ test -s "$test_dir/error.txt"
 if [ "$lab" != 2 ]; then
     mkdir -p "$test_dir/invalid" "$test_dir/many files"
     printf '%s\n' 'class Broken extends {' > "$test_dir/invalid/Broken.java"
+    printf '%s\n' 'class Valid {}' > "$test_dir/invalid/Valid.java"
     if run_lab "$test_dir/invalid" > "$test_dir/actual.txt" 2> "$test_dir/error.txt"; then
         echo 'Ошибка синтаксиса должна завершать программу с ошибкой' >&2
         exit 1
@@ -133,5 +134,25 @@ if [ "$lab" != 2 ]; then
     fi
     run_lab "$test_dir/many files" > "$test_dir/actual.txt"
     diff -u "$test_dir/expected.txt" "$test_dir/actual.txt"
+    if [ "$lab" = 5 ] || [ "$lab" = 6 ]; then
+        for workers in 1 3; do
+            run_lab "$test_dir/many files" "$workers" > "$test_dir/actual.txt"
+            diff -u "$test_dir/expected.txt" "$test_dir/actual.txt"
+        done
+        for workers in 0 -1 invalid; do
+            if run_lab examples/project "$workers" > "$test_dir/actual.txt" 2> "$test_dir/error.txt"; then
+                echo 'Неверное число потоков должно завершать программу с ошибкой' >&2
+                exit 1
+            fi
+            test ! -s "$test_dir/actual.txt"
+            test -s "$test_dir/error.txt"
+        done
+        if run_lab examples/project 2 extra > "$test_dir/actual.txt" 2> "$test_dir/error.txt"; then
+            echo 'Лишние аргументы должны завершать программу с ошибкой' >&2
+            exit 1
+        fi
+        test ! -s "$test_dir/actual.txt"
+        test -s "$test_dir/error.txt"
+    fi
 fi
 echo "Проверки лабораторной $lab пройдены"

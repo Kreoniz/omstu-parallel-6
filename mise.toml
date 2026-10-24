@@ -69,3 +69,22 @@ run = "java -cp build/lab4 lab4.Main"
 description = "Проверить лабораторную 4"
 depends = ["build:lab4"]
 run = "./test.sh 4"
+
+[tasks."build:lab5"]
+description = "Скомпилировать только лабораторную 5"
+run = """
+rm -rf build/lab5
+mkdir -p build/lab5
+javac -encoding UTF-8 -Xlint:all -d build/lab5 src/lab5/Main.java
+"""
+
+[tasks.lab5]
+description = "Лабораторная 5: ExecutorService и список Future"
+depends = ["build:lab5"]
+raw = true
+run = "java -cp build/lab5 lab5.Main"
+
+[tasks."test:lab5"]
+description = "Проверить лабораторную 5"
+depends = ["build:lab5"]
+run = "./test.sh 5"
